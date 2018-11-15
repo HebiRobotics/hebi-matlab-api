@@ -1,2 +1,3 @@
 # hebi-matlab-api
-Internal development of the MATLAB API
+
+Public issue tracker for the MATLAB API
