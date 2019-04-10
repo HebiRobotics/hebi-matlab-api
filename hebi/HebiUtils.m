@@ -69,12 +69,17 @@ classdef (Sealed) HebiUtils
             %      Absolute or relative path to the binary log file.
             %
             %   'View' Parameter (optional)
-            %      'Simple' converts only simple feedback. This is appropriate
-            %               for most users and results in much smaller log
-            %               files. (default)
-            %      'Full'   converts all available feedback. This is appropriate
-            %               for advanced users that need additional timestamps
-            %               or data from less common sensors.
+            %      'Simple'  loads only simple feedback. This is appropriate
+            %                for most users and results in much smaller log
+            %                files. (default)
+            %      'Full'    loads all available feedback. This is appropriate
+            %                for advanced users that need additional timestamps
+            %                or data from less common sensors.
+            %      'IO'      loads feedback fields specific to I/O devices,
+            %                such as analog and digital pins, or the button and
+            %                slider states of the HEBI Mobile I/O app.
+            %      'Mobile'  loads feedback fields specific to mobile devices,
+            %                such as GPS and ARKit/ARCore estimates.
             %
             %   Additionally, this method returns info and gains if the
             %   corresponding data is contained within the log. For
@@ -118,15 +123,20 @@ classdef (Sealed) HebiUtils
             %               result in out-of-memory errors. (default)
             %      'Csv'    converts data to a CSV file
             %      'Mat'    converts data to a MAT file
-            %      'Raw'    returns the input path
+            %      'Raw'    returns the full file path to 'InputFile'
             %
             %   'View' Parameter  (optional)
-            %      'Simple' converts only simple feedback. This is appropriate
-            %               for most users and results in much smaller log
-            %               files. (default)
-            %      'Full'   converts all available feedback. This is appropriate
-            %               for advanced users that need additional timestamps
-            %               or data from less common sensors.
+            %      'Simple'  converts only simple feedback. This is appropriate
+            %                for most users and results in much smaller log
+            %                files. (default)
+            %      'Full'    converts all available feedback. This is appropriate
+            %                for advanced users that need additional timestamps
+            %                or data from less common sensors.
+            %      'IO'      converts feedback fields specific to I/O devices,
+            %                such as analog and digital pins, or the button and
+            %                slider states of the HEBI Mobile I/O app.
+            %      'Mobile'  converts feedback fields specific to mobile devices,
+            %                such as GPS and ARKit/ARCore estimates.
             %
             %   Additionally, this method returns info and gains if the
             %   corresponding data is contained within the log. For
@@ -363,12 +373,17 @@ classdef (Sealed) HebiUtils
             %   The optional parameters are the same as LOADGROUPLOG.
             %
             %   'View' Parameter (optional)
-            %      'Simple' converts only simple feedback. This is appropriate
-            %               for most users and results in much smaller log
-            %               files. (default)
-            %      'Full'   converts all available feedback. This is appropriate
-            %               for advanced users that need additional timestamps
-            %               or data from less common sensors.
+            %      'Simple'  loads only simple feedback. This is appropriate
+            %                for most users and results in much smaller log
+            %                files. (default)
+            %      'Full'    loads all available feedback. This is appropriate
+            %                for advanced users that need additional timestamps
+            %                or data from less common sensors.
+            %      'IO'      loads feedback fields specific to I/O devices,
+            %                such as analog and digital pins, or the button and
+            %                slider states of the HEBI Mobile I/O app.
+            %      'Mobile'  loads feedback fields specific to mobile devices,
+            %                such as GPS and ARKit/ARCore estimates.
             %
             %    Example:
             %       % Load selected files and plot position feedback
@@ -404,15 +419,20 @@ classdef (Sealed) HebiUtils
             %               result in out-of-memory errors. (default)
             %      'Csv'    converts data to a CSV file
             %      'Mat'    converts data to a MAT file
-            %      'Raw'    returns the input path
+            %      'Raw'    returns the full path to the selected log files.
             %
             %   'View' Parameter
-            %      'Simple' converts only simple feedback. This is appropriate
-            %               for most users and results in much smaller log
-            %               files. (default)
-            %      'Full'   converts all available feedback. This is appropriate
-            %               for advanced users that need additional timestamps
-            %               or data from less common sensors.
+            %      'Simple'  converts only simple feedback. This is appropriate
+            %                for most users and results in much smaller log
+            %                files. (default)
+            %      'Full'    converts all available feedback. This is appropriate
+            %                for advanced users that need additional timestamps
+            %                or data from less common sensors.
+            %      'IO'      converts feedback fields specific to I/O devices,
+            %                such as analog and digital pins, or the button and
+            %                slider states of the HEBI Mobile I/O app.
+            %      'Mobile'  converts feedback fields specific to mobile devices,
+            %                such as GPS and ARKit/ARCore estimates.
             %
             %    Example:
             %       % Load selected files and plot position feedback
