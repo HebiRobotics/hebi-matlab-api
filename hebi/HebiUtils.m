@@ -8,11 +8,19 @@ classdef (Sealed) HebiUtils
     %   saveGains          - saves group gains to disk (XML)
     %   loadGains          - loads group gains from disk (XML)
     %
+    %   saveSafetyParams   - saves group safety parameters to disk (XML)
+    %   loadSafetyParams   - loads group safety parameters from disk (XML)
+    %
     %   newGroupFromLog    - generates a group from a .hebilog file that
     %                        you can use play back data using getNextFeedback.
     %
+    %   newImitationGroup  - creates an imitation group for testing
+    %
     %   loadGroupLog       - loads a binary .hebilog file into memory
     %   loadGroupLogsUI    - shows a UI dialog to load one or more logs.
+    %
+    %   readGroupLogInfo   - reads the first info and gains struct from
+    %                        a .hebilog file
     %
     %   convertGroupLog    - converts a binary .hebilog file into a readable
     %                        format, either in memory or files like CSV or MAT.
@@ -183,6 +191,50 @@ classdef (Sealed) HebiUtils
             group = HebiGroup(javaMethod('newGroupFromLog', HebiUtils.className,  varargin{:}));
         end
         
+        function group = newImitationGroup(varargin)
+            % NEWIMITATIONGROUP creates an imitation group for testing
+            %
+            %   An imitation group behaves mostl the same way as a group
+            %   created by HebiLookup, without the requirement to have
+            %   physically connected devices on the network.
+            %
+            %   The main differences are as follows
+            %
+            %   * Commands immediately set the corresponding feedback without
+            %     veryfing physical feasibility. Values will be visible in
+            %     the next feedback.
+            %
+            %   * Imitation devices do not update setting fields (e.g. name)
+            %
+            %   * There is no feedback for physical sensors such as IMU data
+            %
+            %   Example:
+            %     % Create an imitation group
+            %     numModules = 1;
+            %     group = HebiUtils.newImitationGroup(numModules);
+            % 
+            %     % Generate log data
+            %     cmd = CommandStruct();
+            %     logFile = group.startLog();
+            %     t0 = group.getNextFeedback().time;
+            %     t = 0;
+            %     while t < 5
+            %         fbk = group.getNextFeedback();
+            %         t = fbk.time - t0;
+            %         cmd.position = sin(2*pi*t);
+            %         group.send(cmd);
+            %     end
+            %     logStruct = group.stopLog();
+            % 
+            %     % Visualize commands
+            %     plot(logStruct.time, logStruct.position);
+            %     hold on;
+            %     plot(logStruct.time, logStruct.positionCmd, ':');
+            %
+            %   See also HebiUtils, HebiLookup, HebiGroup
+            group = HebiGroup(javaMethod('newImitationGroup', HebiUtils.className,  varargin{:}));
+        end
+        
         function out = saveGains(varargin)
             % SAVEGAINS saves gains for group to disk (xml)
             %
@@ -224,6 +276,79 @@ classdef (Sealed) HebiUtils
             %
             %   See also HebiUtils, saveGains, GainStruct.
             out = javaMethod('loadGains', HebiUtils.className,  varargin{:});
+        end
+        
+        function out = saveSafetyParams(varargin)
+            % SAVESAFETYPARAMS saves safety parameters for a group to disk (xml)
+            %
+            %   This method saves data from a SafetyParamsStruct in a human
+            %   readable format on disk.
+            %
+            %   Examples:
+            %      % Make a new set of safety parameters and save to XML
+            %      safetyParams = SafetyParamsStruct();
+            %      safetyParams.positionMinLimit = [-pi -pi -pi -pi];
+            %      safetyParams.positionMaxLimit = [+pi +pi +pi +pi];
+            %      xmlFile = HebiUtils.saveSafetyParams(safetyParams, 'MySafetyParams');
+            %      display(xmlFile);
+            %
+            %      % Save safety params that are currently set for a group
+            %      safetyParams = group.getSafetyParams();
+            %      xmlFile = HebiUtils.saveSafetyParams(safetyParams, 'MySafetyParams');
+            %      display(xmlFile);
+            %
+            %   See also HebiUtils, loadSafetyParams, SafetyParamsStruct.
+            out = javaMethod('saveSafetyParams', HebiUtils.className,  varargin{:});
+        end
+        
+        function out = loadSafetyParams(varargin)
+            % LOADSAFETYPARAMS loads safety parameters for a group from disk (xml)
+            %
+            %   This method loads parameters from a human readable file into a
+            %   SafetyParamsStruct.
+            %
+            %   Example
+            %      % create dummy file
+            %      xmlFile = HebiUtils.saveSafetyParams(SafetyParamsStruct(), 'MySafetyParams');
+            %
+            %      % load safety parameters from xml w/ dummy data
+            %      safetyParams = HebiUtils.loadSafetyParams(xmlFile);
+            %
+            %   See also HebiUtils, saveSafetyParams, SafetyParamsStruct.
+            out = javaMethod('loadSafetyParams', HebiUtils.className,  varargin{:});
+        end
+        
+        function [info, gains, safetyParams] = readGroupLogInfo(hebiLogFile)
+            % readGroupLogInfo reads the first info and gains struct
+            % from a binary .hebilog file
+            %
+            %   This method will return empty if the log does not contain
+            %   any info or log data.
+            %
+            %   Example:
+            %       [info, gains, safetyParams] = HebiUtils.readGroupLogInfo(path);
+            %
+            %   Example:
+            %       % Get info for all logs selected via a GUI
+            %       fileNames = HebiUtils.convertGroupLogsUI('format','raw');
+            %       [infos, gains, safetyParams] = cellfun(@HebiUtils.readGroupLogInfo, ...
+            %           fileNames, 'UniformOutput', false);
+            
+            % Read log file
+            group = HebiUtils.newGroupFromLog(hebiLogFile);
+            
+            % Step through log until there is enough data to populate info,
+            % or we reach the end of the file
+            fbk = group.getNextFeedback();
+            while isempty(group.getInfo()) && ~isempty(fbk)
+                fbk = group.getNextFeedback(fbk);
+            end
+            
+            % Read info/gains
+            info  = group.getInfo();
+            gains = group.getGains();
+            safetyParams = group.getSafetyParams();
+            
         end
         
         function [ varargout ] = loadGroupLogsUI( varargin )
@@ -702,35 +827,6 @@ classdef (Sealed) HebiUtils
     % Experimental utility methods for internal use. May be made part of
     % the public API at some point or may be removed without notice.
     methods(Access = public, Static, Hidden = true)
-        
-        function [info, gains] = readGroupLogInfo(hebiLogFile)
-            % readGroupLogInfo reads the first info and gains struct 
-            % from a binary .hebilog file
-            %
-            %   Example:
-            %       [info, gains] = HebiUtils.readGroupLogInfo(path);
-            %
-            %   Example:
-            %       % Get info for all logs selected via a GUI
-            %       fileNames = HebiUtils.convertGroupLogsUI('format','raw');
-            %       [infos, gains] = cellfun(@HebiUtils.readGroupLogInfo, ...
-            %           fileNames, 'UniformOutput', false);
-            
-            % Read log file
-            group = HebiUtils.newGroupFromLog(hebiLogFile);
-            
-            % Step through log until there is enough data to populate info,
-            % or we reach the end of the file
-            fbk = group.getNextFeedback();
-            while isempty(group.getInfo()) && ~isempty(fbk)
-                fbk = group.getNextFeedback(fbk);
-            end
-            
-            % Read info/gains
-            info  = group.getInfo();
-            gains = group.getGains();
-            
-        end
         
         function [ feedbackUnits ] = getFeedbackUnits( feedbackField )
             %FEEDBACKUNITS Return units of a given feedback type in a log file
