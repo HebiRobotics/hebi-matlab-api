@@ -18,19 +18,19 @@ function struct = SafetyParamsStruct()
 %   enumerated values with the meaning below:
 %
 %   'mStopStrategy'
-%       nan = Unknown
+%       NaN = Unknown
 %        0  = Disabled
 %        1  = Motor Off
 %        2  = Motor Hold
 %
 %   'positionLimitStrategy'
-%       nan = Unknown
+%       NaN = Unknown
 %        0  = Disabled
 %        1  = Motor Off
 %        2  = Hold Position
 %        3  = Damped Spring
 %
-%   See also HebiGroup, HebiUtils.send
+%   See also HebiGroup, HebiGroup.send, HebiUtils.loadSafetyParams
 
 %   Copyright 2014-2019 HEBI Robotics, Inc.
 struct = javaObject(hebi_load('SafetyParamsStruct'));

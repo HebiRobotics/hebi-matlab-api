@@ -278,10 +278,10 @@ classdef (Sealed) HebiUtils
             %   fields such as 'time' (set to now) or 'mStopStrategy'.
             %
             %   Example
-            %      % create dummy file
+            %      % Create a test XML file with empty gains
             %      gainFile = HebiUtils.saveGains(GainStruct(), 'MyGains');
             %
-            %      % load gains from xml w/ dummy data
+            %      % Load those gains back from the XML file
             %      gains = HebiUtils.loadGains(gainFile);
             %
             %   See also HebiUtils, saveGains, GainStruct.
@@ -302,7 +302,7 @@ classdef (Sealed) HebiUtils
             %      xmlFile = HebiUtils.saveSafetyParams(safetyParams, 'MySafetyParams');
             %      display(xmlFile);
             %
-            %      % Save safety params that are currently set for a group
+            %      % Save the safety parameters that are currently set for a group
             %      safetyParams = group.getSafetyParams();
             %      xmlFile = HebiUtils.saveSafetyParams(safetyParams, 'MySafetyParams');
             %      display(xmlFile);
@@ -318,10 +318,10 @@ classdef (Sealed) HebiUtils
             %   SafetyParamsStruct.
             %
             %   Example
-            %      % create dummy file
+            %      % Create a test XML file with empty safety parameters
             %      xmlFile = HebiUtils.saveSafetyParams(SafetyParamsStruct(), 'MySafetyParams');
             %
-            %      % load safety parameters from xml w/ dummy data
+            %      % Load those safety parameters back from the XML file
             %      safetyParams = HebiUtils.loadSafetyParams(xmlFile);
             %
             %   See also HebiUtils, saveSafetyParams, SafetyParamsStruct.
