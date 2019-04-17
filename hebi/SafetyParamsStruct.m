@@ -18,13 +18,13 @@ function struct = SafetyParamsStruct()
 %   safety parameters are ignored, i.e., any existing setting on the
 %   device for that parameter will remain unmodified.
 %
-%   Example (Loading gains from XML file and setting on a group):
+%   Example (Loading safety parameters from XML file and setting on a group):
 %       safetyParams = HebiUtils.loadSafetyParams('mySafetyParams.xml');
 %       group.send('SafetyParams', safetyParams);
 %
-%   Example (Saving gains to XML file)
+%   Example (Saving safety parameters to XML file)
 %       safetyParams = group.getSafetyParams();
-%       HebiUtils.saveSafetyParams(gains, 'mySafetyParams.xml');
+%       HebiUtils.saveSafetyParams(safetyParams, 'mySafetyParams.xml');
 %
 %   Example (Manually setting safety limits):
 %       limits = SafetyParamsStruct()
