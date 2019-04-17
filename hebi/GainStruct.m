@@ -10,7 +10,9 @@ function struct = GainStruct()
 %
 %   GainStructs can be loaded and saved to an XML file format with 
 %   functions provided in HebiUtils.  This format is the preferred way
-%   of storing and loading gains for different demos / applications.
+%   of storing and loading gains for different demos / applications.  More
+%   information on the XML format can be found at:
+%   https://github.com/HebiRobotics/hebi-xml/blob/master/GAINS.md
 %
 %   Empty entries in the struct and NaNs for any individual values in 
 %   gains or control parmaters are ignored. In these cases any existing 

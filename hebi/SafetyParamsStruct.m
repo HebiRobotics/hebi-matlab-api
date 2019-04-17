@@ -11,6 +11,8 @@ function struct = SafetyParamsStruct()
 %   SafetyParamStructs can be loaded and saved to an XML file format with 
 %   functions provided in HebiUtils.  This format is the preferred way
 %   of storing and loading parameters for different demos / applications.
+%   More information on the XML format can be found at:
+%   https://github.com/HebiRobotics/hebi-xml/blob/master/SAFETY.md
 %
 %   Empty entries in the struct and NaNs for any individual values in
 %   safety parameters are ignored, i.e., any existing setting on the

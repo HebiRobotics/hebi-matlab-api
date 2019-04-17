@@ -246,12 +246,20 @@ classdef (Sealed) HebiUtils
         end
         
         function out = saveGains(varargin)
-            % SAVEGAINS saves gains for group to disk (xml)
+            % SAVEGAINS saves gains for group to disk (XML)
             %
             %   This method saves gains from a GainStruct in a human
-            %   readable format on disk. Note that this includes only the
-            %   control strategy and the corresponding gains, and may
-            %   exclude some fields such as 'time' or 'mStopStrategy'.
+            %   readable format on disk.  This allows safety parameters to
+            %   be saved, revisioned, and shared across different APIs.
+            %
+            %   This format is the preferred way of storing and loading parameters 
+            %   for different demos / applications.  More information on the gains 
+            %   XML format can be found at:
+            %   https://github.com/HebiRobotics/hebi-xml/blob/master/GAINS.md
+            %
+            %   Note that this includes only the control strategy and the 
+            %   corresponding gains, and may exclude some fields such as 'time' or
+            %   'mStopStrategy'.
             %
             %   Examples:
             %      % Make a new set of gains and save to XML
@@ -270,7 +278,10 @@ classdef (Sealed) HebiUtils
         end
         
         function out = loadGains(varargin)
-            % LOADGAINS loads gains for group from disk (xml)
+            % LOADGAINS loads gains for group from disk (XML)
+            %
+            %   More information on the gains XML format can be found at:
+            %   https://github.com/HebiRobotics/hebi-xml/blob/master/GAINS.md
             %
             %   This method loads gains from a human readable file into a
             %   GainStruct. Note that this includes only the control
@@ -289,10 +300,16 @@ classdef (Sealed) HebiUtils
         end
         
         function out = saveSafetyParams(varargin)
-            % SAVESAFETYPARAMS saves safety parameters for a group to disk (xml)
+            % SAVESAFETYPARAMS saves safety parameters for a group to disk (XML)
             %
             %   This method saves data from a SafetyParamsStruct in a human
-            %   readable format on disk.
+            %   readable XML format on disk.  This allows safety parameters to
+            %   be saved, revisioned, and shared across different APIs.
+            %
+            %   This format is the preferred way of storing and loading parameters 
+            %   for different demos / applications.  More information on the safety
+            %   parameters XML format can be found at:
+            %   https://github.com/HebiRobotics/hebi-xml/blob/master/SAFETY.md
             %
             %   Examples:
             %      % Make a new set of safety parameters and save to XML
@@ -312,7 +329,10 @@ classdef (Sealed) HebiUtils
         end
         
         function out = loadSafetyParams(varargin)
-            % LOADSAFETYPARAMS loads safety parameters for a group from disk (xml)
+            % LOADSAFETYPARAMS loads safety parameters for a group from disk (XML)
+            %
+            %   More information on the safety parameter XML format can be found at:
+            %   https://github.com/HebiRobotics/hebi-xml/blob/master/SAFETY.md
             %
             %   This method loads parameters from a human readable file into a
             %   SafetyParamsStruct.
