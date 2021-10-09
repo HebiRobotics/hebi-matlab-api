@@ -5,6 +5,8 @@ classdef (Sealed) HebiUtils
     %
     %   now                - returns the current timestamp [s]
     %
+    %   sendWithRetry      - sends and ensures delivery to a HebiGroup
+    %
     %   saveGains          - saves group gains to disk (XML)
     %   loadGains          - loads group gains from disk (XML)
     %
@@ -15,6 +17,8 @@ classdef (Sealed) HebiUtils
     %                        you can use play back data using getNextFeedback.
     %
     %   newImitationGroup  - creates an imitation group for testing
+    %
+    %   loadHrdf           - loads an hrdf file into HebiKinematics objects
     %
     %   loadGroupLog       - loads a binary .hebilog file into memory
     %   loadGroupLogsUI    - shows a UI dialog to load one or more logs.
@@ -37,8 +41,8 @@ classdef (Sealed) HebiUtils
     %   quat2rotMat        - converts orientations represented by a unit
     %                        quaternion to a rotation matrix.
 
-    %   Copyright 2014-2018 HEBI Robotics, Inc.
-    
+    %   Copyright 2014-2020 HEBI Robotics, Inc.
+
     % Static API
     methods(Static)
         
@@ -161,7 +165,7 @@ classdef (Sealed) HebiUtils
             %       [hebiLog, info, gains] = HebiUtils.convertGroupLog(logFile)
             %
             %   See also HebiGroup.startLog, HebiGroup.stopLog,
-            %   convertGroupLogsUI, loadGroupLog.
+            %   convertGroupLogsUI, loadGroupLog, FeedbackStruct.
             varargout = {javaMethod('convertGroupLog', HebiUtils.className,  varargin{:})};
             if nargout > 1
                 inputFile = varargin{1};
@@ -243,6 +247,50 @@ classdef (Sealed) HebiUtils
             %
             %   See also HebiUtils, HebiLookup, HebiGroup
             group = HebiGroup(javaMethod('newImitationGroup', HebiUtils.className,  varargin{:}));
+        end
+        
+        function varargout = loadHrdf(varargin)
+            % LOADHRDF loads an hrdf file and parses HebiKinematics objects
+            %
+            %   This method is similar to HebiKinematics(hrdfFile) with
+            %   additional support for tree structures and multiple end
+            %   effectors.
+            %
+            %   More information and background on kinematics:
+            %   http://docs.hebi.us/core_concepts.html#kinematics
+            %
+            %   More information on the HEBI Robot Description Format (HRDF):
+            %   http://docs.hebi.us/tools.html#robot-description-format
+            %
+            %   Example
+            %      % Load an hrdf with a single end effector
+            %      kin = HebiUtils.loadHrdf(hrdfFile);
+            %
+            %      % Get the index mask corresponding to the used joints
+            %      [kin, mask] = HebiUtils.loadHrdf(hrdfFile);
+            %      position = fbk.position(mask);
+            %      FK = kin.getForwardKinematicsEndEffector(position);
+            %
+            %      % Get multiple end effectors and their corresponding masks
+            %      [~,~,kins,masks] = HebiUtils.loadHrdf(hrdfFile);
+            %      FK = cell(length(kins),1);
+            %      for i = 1:length(kins)
+            %        position = fbk.position(masks{i});
+            %        FK{i} = kins{i}.getForwardKinematicsEndEffector(position);
+            %      end
+            %      
+            %   See also HebiUtils, HebiKinematics.
+            result = cell(javaMethod('loadHrdf', HebiUtils.className,  varargin{:}));
+            varargout = cell(4);
+            varargout{1} = HebiKinematics(result{1});
+            varargout{2} = result{2};
+            varargout{4} = cell(result{4});
+            
+            kinObj = cell(result{3});
+            for i = 1:length(kinObj)
+                kinObj{i} = HebiKinematics(kinObj{i});
+            end
+            varargout{3} = kinObj;
         end
         
         function out = saveGains(varargin)
@@ -746,7 +794,7 @@ classdef (Sealed) HebiUtils
             end
             
             trajectory = p.Trajectory;
-            time = 0:p.dt:trajectory.getDuration();
+            time = trajectory.getStartTime():p.dt:trajectory.getEndTime();
             waypointTime = trajectory.getWaypointTime();
             
             [pos,vel,acc] = trajectory.getState(time);
@@ -818,6 +866,40 @@ classdef (Sealed) HebiUtils
                              2*(a*c + b*d),         2*(b*c - a*d),  -a^2 - b^2 + c^2 + d^2];
             end    
         end
+        
+        function [] = sendWithRetry(group, varargin)
+            % sendWithRetry sends and ensures delivery of a given message
+            %
+            %   Note that this method may block for an unknown (but bounded)
+            %   time and should not be used inside the main control loop.
+            %
+            %   Example
+            %      group = HebiLookup.newGroupFromFamily('*');
+            %      HebiUtils.sendWithRetry(group, 'led', 'r');
+            %
+            % See also HebiGroup.send
+            
+            % good connectivity -> no changes and return asap
+            if group.send(varargin{:}, 'RequestAck', true)
+                return;
+            end
+            
+            % bad connectivity -> reduce other traffic and retry if needed
+            freq = group.getFeedbackFrequency();
+            finally = onCleanup(@() group.setFeedbackFrequency(freq));
+            group.setFeedbackFrequency(0);
+            
+            maxRetries = 10;
+            for i = 1:maxRetries
+                if group.send(varargin{:}, 'RequestAck', true)
+                    return;
+                end
+            end
+            
+            error(['Failed to send message to all devices. Retries: ' num2str(maxRetries)]);
+            
+        end
+        
     end
     
     properties(Constant, Access = private, Hidden = true)
@@ -959,29 +1041,21 @@ classdef (Sealed) HebiUtils
             %ROTMAT2AXANG Convert an rotation matrix (SO3) to axis-angle
             %representation.  AXIS is a unit vector, and ANGLE is between +/- pi
             %radians.  R is a 3X3 S03 rotation matrix.
-            %
-            %   Based on StackExchange question:
-            %   https://math.stackexchange.com/questions/2217654/interpolation-in-so3-different-approaches
             
-            [eigVec,eigDiag] = eig(R);
-            eigVal = diag(eigDiag);
-            
-            [~,maxIdx] = max(real(eigVal));
-            
-            angle = acos((trace(R)-1)/2);
-            axis = real(eigVec(:,maxIdx));
-            
-            R_check = HebiUtils.axAng2rotMat(axis,angle);
-            
-            checkTolerance = 1E-6;
-            if max(max( abs(R_check*R'-eye(3)) )) > checkTolerance
-                angle = -angle;
-            end
+            % Based on Wikipedia
+            % https://en.wikipedia.org/wiki/Rotation_matrix#Axis_and_angle
+            x = R(3,2) - R(2,3);
+            y = R(1,3) - R(3,1);
+            z = R(2,1) - R(1,2);
+            r = sqrt(x^2 + y^2 + z^2);
+            t = R(1,1) + R(2,2) + R(3,3);
+            angle = atan2(r,t-1);
+            axis = [x; y; z] / r;
             
             % Keep angle between +/- pi
             if abs(angle) > pi
                 angle = sign(angle)*(abs(angle) - 2*pi);
-            end            
+            end
         end
         
     end

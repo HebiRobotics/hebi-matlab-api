@@ -13,10 +13,9 @@ classdef (Sealed) HebiKinematics
     %   http://docs.hebi.us/tools.html#robot-description-format
     %
     %   This API currently only supports serial chains. If you are going to
-    %   work with a robot that has multiple limbs, such as a hexapod, we
-    %   recommend creating a cell array that contains a separate kinematic
-    %   object for each limb. The base frames can be set to the pose of the
-    %   first body of the limb with respect to the chassis.
+    %   work with a robot that has multiple limbs, such as a hexapod, you
+    %   need to use HebiUtils.loadHrdf(hrdfFile) which creates a separate
+    %   kinematic object for each defined end effector / limb.
     %
     %   HebiKinematics Methods (setup):
     %      kin = HebiKinematics('robot.hrdf') - where 'robot.hrdf' is the
@@ -49,6 +48,7 @@ classdef (Sealed) HebiKinematics
     %      getBodyInfo           - a table of body related info
     %      getJointInfo          - a table of joint related info
     %      getBaseFrame          - get transform from world to first body
+    %      getFirstJointFrame    - get transform from world to first joint
     %      getPayload            - additional mass at end-effector used 
     %                              for effort compensation
     %
@@ -101,6 +101,9 @@ classdef (Sealed) HebiKinematics
             %       'X5-Link'               (Extension, Twist)
             %       'X5-LightBracket'       (Mounting)
             %       'X5-HeavyBracket'       (Mounting)
+            %       'R8-3'
+            %       'R8-9'
+            %       'R8-16'
             %
             %     Custom Types
             %       'GenericJoint'          (Axis)
@@ -128,7 +131,7 @@ classdef (Sealed) HebiKinematics
             %       Parameter          Size    Units      Synonyms
             %       'PositionLimit'    1x2     [rad|m]    ('PosLim')
             %       'VelocityLimit'    1x2     [rad/s]    ('VelLim')
-            %       'EffortLimit'      1x2     [Nm|N]     ('EffLim')
+            %       'EffortLimit'      1x2     [Nm]     ('EffLim')
             %       'Mass'             1x1     [kg]
             %
             %   Example
@@ -294,7 +297,7 @@ classdef (Sealed) HebiKinematics
             %   This method expects a 4x4 homogeneous transform that
             %   describes the relationship between the world frame and the
             %   frame of the first body. All kinematics are expressed in
-            %   the world frame.  Units of XYZ translation are in [m].
+            %   the world frame. Units of XYZ translation are in [m].
             %
             %   Example
             %     % Shift the base frame of the kinematics by .5 meters
@@ -305,6 +308,19 @@ classdef (Sealed) HebiKinematics
             %
             %   See also HebiKinematics, getBaseFrame
             setBaseFrame(this.obj, varargin{:});
+        end
+        
+        function out = getFirstJointFrame(this, varargin)
+            % getFirstJointFrame returns the relationship between the world
+            % and the first joint in the kinematic configuration.
+            %
+            %   This method returns a 4x4 homogeneous transform that
+            %   describes the relationship between the world frame and the
+            %   frame of the first joint. All kinematics are expressed in
+            %   the world frame. Units of XYZ translation are in [m].
+            %
+            %   See also HebiKinematics, setBaseFrame
+            out = getFirstJointFrame(this.obj, varargin{:});
         end
         
         function out = getForwardKinematics(this, varargin)
@@ -604,12 +620,19 @@ classdef (Sealed) HebiKinematics
         
         function this = HebiKinematics(varargin)
             % constructor
-            this.obj = javaObject(HebiKinematics.className);
             
+            % special internal constructor where we pass 
+            % in the raw java object
+            if nargin == 1 && isa(varargin{1}, HebiKinematics.className)
+                this.obj = varargin{1};
+                return;
+            end
+            
+            % normal constructor w/ empty or hrdf argument
+            this.obj = javaObject(HebiKinematics.className);
             if nargin > 0
                 addHrdf(this.obj, varargin{1});
             end
-            
         end
         
         function disp(this)
